@@ -2,41 +2,40 @@
 from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
 
-
-# 1. Define the State
+# Define State
 class AgentState(TypedDict):
     message: str
 
-
-# 2. Define the Node
+# Node 1
 def greeting_node(state: AgentState):
     return {
         "message": "Hello " + state["message"]
     }
 
+# Node 2
+def uppercase_node(state: AgentState):
+    return {
+        "message": state["message"].upper()
+    }
 
-# 3. Create the Graph
+# Create graph
 graph_builder = StateGraph(AgentState)
 
-
-# 4. Add the Node
+# Register nodes
 graph_builder.add_node("greeting", greeting_node)
+graph_builder.add_node("uppercase", uppercase_node)
 
-
-# 5. Define the Edges
+# Connect nodes
 graph_builder.add_edge(START, "greeting")
-graph_builder.add_edge("greeting", END)
+graph_builder.add_edge("greeting", "uppercase")
+graph_builder.add_edge("uppercase", END)
 
-
-# 6. Compile the Graph
+# Compile
 graph = graph_builder.compile()
 
-
-# 7. Execute the Graph
+# Execute
 result = graph.invoke({
     "message": "ByteForce"
 })
 
-
-# 8. Print the Result
 print(result)
