@@ -1,41 +1,33 @@
-
-from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
+from typing import TypedDict
+from tools import get_weather
 
-# Define State
+
+load_dotenv()
 class AgentState(TypedDict):
     message: str
 
-# Node 1
-def greeting_node(state: AgentState):
-    return {
-        "message": "Hello " + state["message"]
-    }
+llm = ChatGroq(
+    model="openai/gpt-oss-20b",
+    temperature=0
+)
+def llm_node(state: AgentState):
 
-# Node 2
-def uppercase_node(state: AgentState):
-    return {
-        "message": state["message"].upper()
-    }
+    response = llm.invoke(state["message"])
 
-# Create graph
+    return {
+        "message": response.content
+    }
+llmtools=llm.bind_tools([get_weather])
 graph_builder = StateGraph(AgentState)
 
-# Register nodes
-graph_builder.add_node("greeting", greeting_node)
-graph_builder.add_node("uppercase", uppercase_node)
+graph_builder.add_node("llm", llm_node)
 
-# Connect nodes
-graph_builder.add_edge(START, "greeting")
-graph_builder.add_edge("greeting", "uppercase")
-graph_builder.add_edge("uppercase", END)
+graph_builder.add_edge(START, "llm")
+graph_builder.add_edge("llm", END)
 
-# Compile
 graph = graph_builder.compile()
-
-# Execute
-result = graph.invoke({
-    "message": "ByteForce"
-})
-
-print(result)
+response=llmtools.invoke("Use weather tool to get the weather in Ontario")
+print(response.tool_calls)
